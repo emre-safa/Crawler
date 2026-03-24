@@ -48,8 +48,8 @@ func (m *Manager) run(ctx context.Context, rj *runningJob) {
 			continue
 		}
 
-		// Check global visited set (atomic check-and-mark)
-		if !m.visited.MarkVisited(canonical) {
+		// Check per-job visited set (atomic check-and-mark)
+		if !rj.visited.MarkVisited(canonical) {
 			continue // already visited
 		}
 
@@ -131,7 +131,7 @@ func (m *Manager) run(ctx context.Context, rj *runningJob) {
 		if item.Depth+1 <= rj.params.MaxDepth {
 			for _, link := range page.Links {
 				cLink := frontier.Canonicalize(link)
-				if cLink != "" && !m.visited.IsVisited(cLink) {
+				if cLink != "" && !rj.visited.IsVisited(cLink) {
 					// Back-pressure: respect max queue size
 					if len(queue) < rj.params.MaxQueueSize {
 						queue = append(queue, types.QueueItem{URL: cLink, Depth: item.Depth + 1})

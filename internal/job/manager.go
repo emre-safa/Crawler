@@ -19,10 +19,11 @@ import (
 
 // runningJob tracks a job that is currently executing.
 type runningJob struct {
-	cancel context.CancelFunc
-	mu     sync.RWMutex
-	state  *types.JobState
-	params types.JobParams
+	cancel  context.CancelFunc
+	mu      sync.RWMutex
+	state   *types.JobState
+	params  types.JobParams
+	visited *filestorage.VisitedSet
 }
 
 func (rj *runningJob) addLog(level, msg string) {
@@ -68,7 +69,6 @@ type Manager struct {
 	ctx     context.Context
 	mu      sync.Mutex
 	store   *store.Store
-	visited *filestorage.VisitedSet
 	words   *filestorage.WordStore
 	fetch   *fetcher.Fetcher
 	jobs    map[string]*runningJob
@@ -78,7 +78,7 @@ type Manager struct {
 }
 
 // NewManager creates a job Manager.
-func NewManager(ctx context.Context, cfg *config.Config, st *store.Store, visited *filestorage.VisitedSet, words *filestorage.WordStore) *Manager {
+func NewManager(ctx context.Context, cfg *config.Config, st *store.Store, words *filestorage.WordStore) *Manager {
 	fetchCfg := fetcher.Config{
 		FetchTimeout: cfg.FetchTimeout,
 		MaxRedirects: cfg.MaxRedirects,
@@ -88,7 +88,6 @@ func NewManager(ctx context.Context, cfg *config.Config, st *store.Store, visite
 	return &Manager{
 		ctx:     ctx,
 		store:   st,
-		visited: visited,
 		words:   words,
 		fetch:   fetcher.New(fetchCfg),
 		jobs:    make(map[string]*runningJob),
@@ -159,12 +158,20 @@ func (m *Manager) Create(params types.JobParams) (*types.Job, error) {
 		return nil, fmt.Errorf("write initial job state: %w", err)
 	}
 
+	// Create per-job visited set
+	visitedPath := filepath.Join(filestorage.JobDir(jobsDir, id), "visited_urls.data")
+	visited, err := filestorage.NewVisitedSet(visitedPath)
+	if err != nil {
+		return nil, fmt.Errorf("create visited set: %w", err)
+	}
+
 	// Start the crawl goroutine
 	jobCtx, cancel := context.WithCancel(m.ctx)
 	rj := &runningJob{
-		cancel: cancel,
-		state:  state,
-		params: params,
+		cancel:  cancel,
+		state:   state,
+		params:  params,
+		visited: visited,
 	}
 
 	m.mu.Lock()
@@ -174,6 +181,7 @@ func (m *Manager) Create(params types.JobParams) (*types.Job, error) {
 	m.wg.Add(1)
 	go func() {
 		defer m.wg.Done()
+		defer rj.visited.Close()
 		m.run(jobCtx, rj)
 		// Update SQLite with final status
 		rj.mu.RLock()

@@ -55,13 +55,6 @@ func main() {
 	defer st.Close()
 
 	// Initialize file storage
-	visitedPath := filepath.Join(cfg.DataDir, "visited_urls.data")
-	visited, err := filestorage.NewVisitedSet(visitedPath)
-	if err != nil {
-		log.Fatalf("Failed to load visited set: %v", err)
-	}
-	defer visited.Close()
-
 	storageDir := filepath.Join(cfg.DataDir, "storage")
 	words, err := filestorage.NewWordStore(storageDir)
 	if err != nil {
@@ -86,7 +79,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	jm := job.NewManager(ctx, cfg, st, visited, words)
+	jm := job.NewManager(ctx, cfg, st, words)
 
 	// Create web server
 	srv := web.NewServer(templates, jm, words)
