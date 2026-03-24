@@ -1,0 +1,63 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{template "title" .}} — Crawler</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0f1117; color: #e1e4e8; line-height: 1.6; }
+        a { color: #58a6ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        nav { background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 24px; display: flex; gap: 24px; align-items: center; }
+        nav .brand { font-weight: 700; font-size: 1.2em; color: #f0f6fc; }
+        nav a { color: #8b949e; font-weight: 500; }
+        nav a:hover, nav a.active { color: #f0f6fc; }
+        main { max-width: 960px; margin: 24px auto; padding: 0 24px; }
+        h1 { font-size: 1.5em; margin-bottom: 16px; color: #f0f6fc; }
+        h2 { font-size: 1.2em; margin: 24px 0 12px; color: #f0f6fc; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; margin-bottom: 16px; }
+        label { display: block; margin-bottom: 12px; color: #8b949e; font-size: 0.9em; }
+        input[type="text"], input[type="number"], input[type="url"] {
+            width: 100%; padding: 8px 12px; background: #0d1117; border: 1px solid #30363d;
+            border-radius: 6px; color: #e1e4e8; font-size: 1em; margin-top: 4px;
+        }
+        input:focus { outline: none; border-color: #58a6ff; }
+        button, .btn {
+            display: inline-block; padding: 8px 16px; background: #238636; color: #fff;
+            border: 1px solid #2ea043; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: 500;
+        }
+        button:hover, .btn:hover { background: #2ea043; }
+        .btn-danger { background: #da3633; border-color: #f85149; }
+        .btn-danger:hover { background: #f85149; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #21262d; }
+        th { color: #8b949e; font-weight: 600; font-size: 0.85em; text-transform: uppercase; }
+        .status { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.8em; font-weight: 600; }
+        .status-running { background: #1f6feb33; color: #58a6ff; }
+        .status-completed { background: #23863633; color: #3fb950; }
+        .status-failed { background: #da363333; color: #f85149; }
+        .status-interrupted { background: #d29922; color: #0d1117; }
+        .status-pending { background: #8b949e33; color: #8b949e; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+        .text-muted { color: #8b949e; }
+        .text-sm { font-size: 0.85em; }
+        .mt-2 { margin-top: 8px; }
+        .mt-4 { margin-top: 16px; }
+        .mb-4 { margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span class="brand">🕷 Crawler</span>
+        <a href="/">Jobs</a>
+        <a href="/search">Search</a>
+    </nav>
+    <main>
+        {{template "content" .}}
+    </main>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,121 @@
+{{define "title"}}Job {{.State.ID}}{{end}}
+{{define "content"}}
+<h1>
+    Crawler Job: {{.State.ID}}
+    <span class="status status-{{.State.Status}}" id="status-badge">{{.State.Status}}</span>
+</h1>
+
+<div class="card">
+    <div class="grid-2">
+        <div>
+            <p class="text-sm text-muted">Origin URL</p>
+            <p><a href="{{.State.OriginURL}}" target="_blank">{{.State.OriginURL}}</a></p>
+        </div>
+        <div>
+            <p class="text-sm text-muted">Max Depth</p>
+            <p>{{.State.MaxDepth}}</p>
+        </div>
+    </div>
+    <div class="grid-3 mt-4">
+        <div>
+            <p class="text-sm text-muted">Pages Crawled</p>
+            <p id="pages-crawled" style="font-size:1.4em; font-weight:700; color:#3fb950;">{{.State.PagesCrawled}}</p>
+        </div>
+        <div>
+            <p class="text-sm text-muted">Pages Failed</p>
+            <p id="pages-failed" style="font-size:1.4em; font-weight:700; color:#f85149;">{{.State.PagesFailed}}</p>
+        </div>
+        <div>
+            <p class="text-sm text-muted">Pending URLs</p>
+            <p id="pending-count" style="font-size:1.4em; font-weight:700; color:#58a6ff;">{{len .State.PendingURLs}}</p>
+        </div>
+    </div>
+    {{if eq .State.Status "running"}}
+    <div class="mt-4">
+        <form method="POST" action="/status/{{.State.ID}}/cancel">
+            <button class="btn-danger">Cancel Job</button>
+        </form>
+    </div>
+    {{end}}
+</div>
+
+<h2>Logs</h2>
+<div class="card" id="logs" style="max-height: 500px; overflow-y: auto; font-family: monospace; font-size: 0.85em; line-height: 1.8;">
+    {{range .State.Logs}}
+    <div class="log-{{.Level}}">
+        <span class="text-muted">{{.Time.Format "15:04:05"}}</span>
+        {{if eq .Level "error"}}<span style="color:#f85149;">ERR</span>{{else if eq .Level "warn"}}<span style="color:#d29922;">WRN</span>{{else}}<span style="color:#3fb950;">INF</span>{{end}}
+        {{.Msg}}
+    </div>
+    {{end}}
+</div>
+
+<p class="text-sm text-muted mt-2"><a href="/">← Back to jobs</a></p>
+
+<script>
+(function() {
+    const crawlerId = "{{.State.ID}}";
+    let logIndex = {{len .State.Logs}};
+    const logsDiv = document.getElementById("logs");
+    const statusBadge = document.getElementById("status-badge");
+
+    function poll() {
+        fetch("/status/" + crawlerId + "/poll?after=" + logIndex)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                logIndex = data.log_index;
+
+                // Append new log lines
+                (data.logs || []).forEach(function(log) {
+                    const div = document.createElement("div");
+                    div.className = "log-" + log.level;
+                    const time = new Date(log.time).toLocaleTimeString("en-GB", {hour12: false});
+                    let levelTag = '<span style="color:#3fb950;">INF</span>';
+                    if (log.level === "error") levelTag = '<span style="color:#f85149;">ERR</span>';
+                    else if (log.level === "warn") levelTag = '<span style="color:#d29922;">WRN</span>';
+                    div.innerHTML = '<span class="text-muted">' + time + '</span> ' + levelTag + ' ' + log.msg;
+                    logsDiv.appendChild(div);
+                });
+
+                // Auto-scroll
+                logsDiv.scrollTop = logsDiv.scrollHeight;
+
+                // Update stats
+                if (data.pages_crawled !== undefined) {
+                    document.getElementById("pages-crawled").textContent = data.pages_crawled;
+                }
+                if (data.pages_failed !== undefined) {
+                    document.getElementById("pages-failed").textContent = data.pages_failed;
+                }
+                if (data.pending_count !== undefined) {
+                    document.getElementById("pending-count").textContent = data.pending_count;
+                }
+
+                // Update status badge
+                if (data.status && data.status !== statusBadge.textContent) {
+                    statusBadge.textContent = data.status;
+                    statusBadge.className = "status status-" + data.status;
+                    if (data.status !== "running") {
+                        // Reload page to show final state
+                        setTimeout(function() { location.reload(); }, 500);
+                        return;
+                    }
+                }
+
+                if (data.status === "running") {
+                    poll();
+                }
+            })
+            .catch(function() {
+                setTimeout(poll, 3000);
+            });
+    }
+
+    if (statusBadge.textContent === "running") {
+        // Scroll to bottom on load
+        logsDiv.scrollTop = logsDiv.scrollHeight;
+        poll();
+    }
+})();
+</script>
+{{end}}

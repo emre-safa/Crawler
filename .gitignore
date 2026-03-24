@@ -1,0 +1,5 @@
+data/
+crawler.db
+crawler.db-shm
+crawler.db-wal
+/crawler

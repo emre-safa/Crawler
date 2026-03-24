@@ -1,0 +1,71 @@
+{{define "title"}}Crawler Jobs{{end}}
+{{define "content"}}
+<h1>Create New Crawl Job</h1>
+<div class="card">
+    <form method="POST" action="/">
+        <label>
+            Origin URL
+            <input type="url" name="origin_url" required placeholder="https://example.com" autofocus>
+        </label>
+        <div class="grid-3">
+            <label>
+                Max Depth
+                <input type="number" name="max_depth" value="3" min="1" max="10">
+            </label>
+            <label>
+                Rate Limit (req/s)
+                <input type="number" name="rate_limit" value="2" min="1" max="20">
+            </label>
+            <label>
+                Queue Capacity
+                <input type="number" name="max_queue_size" value="10000" min="100" max="100000">
+            </label>
+        </div>
+        <button type="submit">Start Crawl</button>
+    </form>
+</div>
+
+{{if .Error}}
+<div class="card" style="border-color: #f85149;">
+    <p style="color: #f85149;">{{.Error}}</p>
+</div>
+{{end}}
+
+<h2>Previous Jobs</h2>
+{{if .Jobs}}
+<div class="card" style="padding: 0; overflow-x: auto;">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Origin</th>
+                <th>Status</th>
+                <th>Pages</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Jobs}}
+            <tr>
+                <td><a href="/status/{{.ID}}">{{.ID}}</a></td>
+                <td class="text-sm">{{.OriginURL}}</td>
+                <td><span class="status status-{{.Status}}">{{.Status}}</span></td>
+                <td>{{.PagesCrawled}}</td>
+                <td class="text-sm text-muted">{{.CreatedAt.Format "2006-01-02 15:04:05"}}</td>
+                <td>
+                    {{if eq .Status "running"}}
+                    <form method="POST" action="/status/{{.ID}}/cancel" style="display:inline;">
+                        <button class="btn-danger" style="padding:4px 10px; font-size:0.8em;">Cancel</button>
+                    </form>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{else}}
+<p class="text-muted">No jobs yet. Create one above to get started.</p>
+{{end}}
+{{end}}

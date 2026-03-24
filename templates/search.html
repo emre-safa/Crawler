@@ -1,0 +1,54 @@
+{{define "title"}}Search{{end}}
+{{define "content"}}
+<h1>Search</h1>
+<div class="card">
+    <form method="GET" action="/search">
+        <div style="display:flex; gap:8px;">
+            <input type="text" name="q" value="{{.Query}}" placeholder="Search crawled pages..." autofocus style="flex:1;">
+            <button type="submit">Search</button>
+        </div>
+    </form>
+</div>
+
+{{if .Query}}
+<p class="text-muted mb-4">{{.TotalResults}} result{{if ne .TotalResults 1}}s{{end}} for "{{.Query}}" — page {{.Page}}</p>
+
+{{if .Results}}
+<div class="card" style="padding: 0;">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>URL</th>
+                <th>Origin</th>
+                <th>Depth</th>
+                <th>Frequency</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range $i, $r := .Results}}
+            <tr>
+                <td class="text-muted">{{$.Offset | add $i}}</td>
+                <td><a href="{{$r.URL}}" target="_blank">{{$r.URL}}</a></td>
+                <td class="text-sm text-muted">{{$r.OriginURL}}</td>
+                <td>{{$r.Depth}}</td>
+                <td>{{$r.Freq}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4" style="display:flex; gap:12px;">
+    {{if .HasPrev}}
+    <a class="btn" href="/search?q={{.Query}}&p={{.PrevPage}}">← Previous</a>
+    {{end}}
+    {{if .HasNext}}
+    <a class="btn" href="/search?q={{.Query}}&p={{.NextPage}}">Next →</a>
+    {{end}}
+</div>
+{{else}}
+<p class="text-muted">No results found.</p>
+{{end}}
+{{end}}
+{{end}}
